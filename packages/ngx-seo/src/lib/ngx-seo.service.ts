@@ -1,18 +1,21 @@
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { filter, map, mergeMap } from 'rxjs/operators';
+import { DOCUMENT } from '@angular/common';
 import { Inject, Injectable } from '@angular/core';
 import { Meta, MetaDefinition, Title } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
-import { NGX_SEO_META_KEYS } from './ngx-seo-meta-keys';
-import { NGX_SEO_TITLE_KEYS } from './ngx-seo-title-keys';
+import { Subscription } from 'rxjs';
+import { filter, map, mergeMap } from 'rxjs/operators';
+
 import { NgxSeo, NgxSeoMeta } from './ngx-seo';
 import { NGX_SEO_CONFIG_TOKEN, NgxSeoConfig } from './ngx-seo-config';
+import { NGX_SEO_META_KEYS } from './ngx-seo-meta-keys';
+import { NGX_SEO_TITLE_KEYS } from './ngx-seo-title-keys';
 
 @Injectable()
 export class NgxSeoService {
   constructor(
     @Inject(NGX_SEO_CONFIG_TOKEN) private config: NgxSeoConfig,
+    @Inject(DOCUMENT) private document: Document,
     private activatedRoute: ActivatedRoute,
     private meta: Meta,
     private router: Router,
@@ -97,6 +100,14 @@ export class NgxSeoService {
 
     if (meta.canonical) {
       this.setMetaCanonical(meta.canonical);
+
+      // Required for Google Search Console https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls#rel-canonical-link-method
+      const link: HTMLLinkElement =
+        this.document.querySelector('link[rel="canonical"]') ??
+        this.document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      link.setAttribute('href', meta.canonical);
+      this.document.head.appendChild(link);
     }
 
     if (meta.customTags && meta.customTags.length > 0) {
